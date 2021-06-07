@@ -12,12 +12,12 @@ import (
 )
 
 //calculate euclidean distance betwee two slices
-func Dist(source, dest []float64) float64 {
-	val := 0.0
+func euclidian(source, dest []float64) float64 {
+	distance := 0.0
 	for i, _ := range source {
-		val += math.Pow(source[i]-dest[i], 2)
+		distance += math.Pow(source[i]-dest[i], 2)
 	}
-	return math.Sqrt(val)
+	return math.Sqrt(distance)
 }
 
 //argument sort
@@ -79,7 +79,7 @@ type KNN struct {
 	labels []string
 }
 
-func (knn *KNN) fit(X [][]float64, Y []string) {
+func (knn *KNN) loadData(X [][]float64, Y []string) {
 	//read data
 	knn.data = X
 	knn.labels = Y
@@ -95,7 +95,7 @@ func (knn *KNN) predict(X [][]float64) []string {
 		)
 		//calculate distance between predict target data and surpervised data
 		for _, dest := range knn.data {
-			distList = append(distList, Dist(source, dest))
+			distList = append(distList, euclidian(source, dest))
 		}
 		//take top k nearest item's index
 		s := NewFloat64Slice(distList)
@@ -144,7 +144,7 @@ func knn(X [][]float64, Y []string, K int) {
 	//training
 	knn := KNN{}
 	knn.k = K
-	knn.fit(trainX, trainY)
+	knn.loadData(trainX, trainY)
 	predicted := knn.predict(testX)
 
 	//check accuracy
@@ -160,13 +160,7 @@ func knn(X [][]float64, Y []string, K int) {
 
 }
 
-type DataSet struct {
-	data  [][]float64 `json:"data"`
-	label []string    `json:"label"`
-}
-
-func (ds *DataSet) readData() {
-	//read data
+func loadDataSet() [][]string {
 	irisMatrix := [][]string{}
 	iris, err := os.Open("iris.csv")
 	if err != nil {
@@ -194,8 +188,28 @@ func (ds *DataSet) readData() {
 		}
 		irisMatrix = append(irisMatrix, record)
 	}
+	return irisMatrix
+}
+
+type DataSet struct {
+	SepalLength []float64 `json:"SepalLength"`
+	SepalWidth  []float64 `json:"SepalWidth"`
+	PetalLength []float64 `json:"PetalLength"`
+	PetalWidth  []float64 `json:"PetalWidth"`
+	Data        [][]float64
+	Label       []string
+}
+
+func (ds *DataSet) readData() {
+	//read data
+
+	irisMatrix := loadDataSet()
 
 	//split data into explaining and explained variables
+	sepalLength := []float64{}
+	sepalWidth := []float64{}
+	petalLength := []float64{}
+	petalWidth := []float64{}
 	X := [][]float64{}
 	Y := []string{}
 
@@ -214,17 +228,32 @@ func (ds *DataSet) readData() {
 		X = append(X, temp)
 
 		//explained variables
+		parsedValue, _ := strconv.ParseFloat(data[0], 64)
+		sepalLength = append(sepalLength, parsedValue)
+
+		parsedValue, _ = strconv.ParseFloat(data[1], 64)
+		sepalWidth = append(sepalWidth, parsedValue)
+
+		parsedValue, _ = strconv.ParseFloat(data[2], 64)
+		petalLength = append(petalLength, parsedValue)
+
+		parsedValue, _ = strconv.ParseFloat(data[3], 64)
+		petalWidth = append(petalWidth, parsedValue)
+
 		Y = append(Y, data[4])
 	}
 
-	ds.data = X
-	ds.label = Y
+	ds.SepalLength = sepalLength
+	ds.SepalWidth = sepalWidth
+	ds.PetalLength = petalLength
+	ds.PetalWidth = petalWidth
+	ds.Data = X
+	ds.Label = Y
 }
 
 func fillDataSet() DataSet {
 	ds := DataSet{}
 	ds.readData()
 	return ds
-
 	//knn(ds.data, ds.label, 5)
 }

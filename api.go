@@ -57,7 +57,7 @@ func resuelveDataSet(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	ds := DataSet{}
 	ds = fillDataSet()
-	jsonBytes, _ := json.MarshalIndent(ds.label, "", "")
+	jsonBytes, _ := json.MarshalIndent(ds.SepalWidth, "", "")
 	io.WriteString(res, string(jsonBytes))
 
 }

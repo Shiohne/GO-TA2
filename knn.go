@@ -11,93 +11,6 @@ import (
 	"strconv"
 )
 
-func main() {
-	//read data
-	irisMatrix := [][]string{}
-	iris, err := os.Open("iris.csv")
-	if err != nil {
-		panic(err)
-	}
-	defer iris.Close()
-	br := bufio.NewReader(iris)
-	r, _, err := br.ReadRune()
-	if err != nil {
-		panic(err)
-	}
-	if r != '\uFEFF' {
-		br.UnreadRune()
-	}
-
-	reader := csv.NewReader(br)
-	reader.Comma = ','
-	reader.LazyQuotes = true
-	for {
-		record, err := reader.Read()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			panic(err)
-		}
-		irisMatrix = append(irisMatrix, record)
-	}
-
-	//split data into explaining and explained variables
-	X := [][]float64{}
-	Y := []string{}
-	for _, data := range irisMatrix {
-
-		//convert str slice data into float slice data
-		temp := []float64{}
-		for _, i := range data[:4] {
-			parsedValue, err := strconv.ParseFloat(i, 64)
-			if err != nil {
-				panic(err)
-			}
-			temp = append(temp, parsedValue)
-		}
-		//explaining variables
-		X = append(X, temp)
-
-		//explained variables
-		Y = append(Y, data[4])
-	}
-
-	//split data into training and test
-	var (
-		trainX [][]float64
-		trainY []string
-		testX  [][]float64
-		testY  []string
-	)
-	for i, _ := range X {
-		if i%2 == 0 {
-			trainX = append(trainX, X[i])
-			trainY = append(trainY, Y[i])
-		} else {
-			testX = append(testX, X[i])
-			testY = append(testY, Y[i])
-		}
-	}
-
-	//training
-	knn := KNN{}
-	knn.k = 5
-	knn.fit(trainX, trainY)
-	predicted := knn.predict(testX)
-
-	//check accuracy
-	correct := 0
-	for i, _ := range predicted {
-		if predicted[i] == testY[i] {
-			correct += 1
-		}
-	}
-	fmt.Println(correct)
-	fmt.Println(len(predicted))
-	fmt.Println(float64(correct) / float64(len(predicted)))
-
-}
-
 //calculate euclidean distance betwee two slices
 func Dist(source, dest []float64) float64 {
 	val := 0.0
@@ -208,4 +121,110 @@ func (knn *KNN) predict(X [][]float64) []string {
 	}
 	return predictedLabel
 
+}
+
+func knn(X [][]float64, Y []string, K int) {
+	//split data into training and test
+	var (
+		trainX [][]float64
+		trainY []string
+		testX  [][]float64
+		testY  []string
+	)
+	for i, _ := range X {
+		if i%2 == 0 {
+			trainX = append(trainX, X[i])
+			trainY = append(trainY, Y[i])
+		} else {
+			testX = append(testX, X[i])
+			testY = append(testY, Y[i])
+		}
+	}
+
+	//training
+	knn := KNN{}
+	knn.k = K
+	knn.fit(trainX, trainY)
+	predicted := knn.predict(testX)
+
+	//check accuracy
+	correct := 0
+	for i, _ := range predicted {
+		if predicted[i] == testY[i] {
+			correct += 1
+		}
+	}
+	fmt.Printf("Usando K = %d vecinos\n", K)
+	fmt.Printf("Predicciones correctas: %d de %d \n", correct, len(predicted))
+	fmt.Printf("Precisión de %0.3f%%\n", (float64(correct)/float64(len(predicted)))*100)
+
+}
+
+type DataSet struct {
+	data  [][]float64
+	label []string
+}
+
+func (ds *DataSet) readData() {
+	//read data
+	irisMatrix := [][]string{}
+	iris, err := os.Open("iris.csv")
+	if err != nil {
+		panic(err)
+	}
+	defer iris.Close()
+	br := bufio.NewReader(iris)
+	r, _, err := br.ReadRune()
+	if err != nil {
+		panic(err)
+	}
+	if r != '\uFEFF' {
+		br.UnreadRune()
+	}
+
+	reader := csv.NewReader(br)
+	reader.Comma = ','
+	reader.LazyQuotes = true
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+		irisMatrix = append(irisMatrix, record)
+	}
+
+	//split data into explaining and explained variables
+	X := [][]float64{}
+	Y := []string{}
+
+	for _, data := range irisMatrix {
+
+		//convert str slice data into float slice data
+		temp := []float64{}
+		for _, i := range data[:4] {
+			parsedValue, err := strconv.ParseFloat(i, 64)
+			if err != nil {
+				panic(err)
+			}
+			temp = append(temp, parsedValue)
+		}
+		//explaining variables
+		X = append(X, temp)
+
+		//explained variables
+		Y = append(Y, data[4])
+	}
+
+	ds.data = X
+	ds.label = Y
+}
+
+func fillDataSet() DataSet {
+	ds := DataSet{}
+	ds.readData()
+	return ds
+
+	//knn(ds.data, ds.label, 5)
 }

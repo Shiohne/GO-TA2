@@ -18,23 +18,6 @@ type Alumno struct {
 //global
 var alumnos []Alumno
 
-func cargarDatos() {
-	alumnos = []Alumno{
-		{"123", "Sigi Andre", 71328381},
-		{"456", "Nicole Jealid", 12345678},
-		{"789", "Manuel Coronado", 78945612}}
-}
-
-func resuelveListar(res http.ResponseWriter, req *http.Request) {
-	//tipo de contenido de la respuesta
-	res.Header().Set("Content-Type", "application/json")
-
-	//serializar, codificar el resultado a formato json
-	jsonBytes, _ := json.MarshalIndent(alumnos, "", "")
-	io.WriteString(res, string(jsonBytes))
-	log.Println("Respuesta Existosa!")
-}
-
 func resuelveBuscarAlumno(res http.ResponseWriter, req *http.Request) {
 	log.Println("llamada al endpoint /alumno")
 
@@ -81,7 +64,6 @@ func resuelveDataSet(res http.ResponseWriter, req *http.Request) {
 
 func manejadorRequest() {
 	//definir los endpoints de nuestro servicio
-	http.HandleFunc("/listar", resuelveListar)
 	http.HandleFunc("/alumno", resuelveBuscarAlumno)
 	http.HandleFunc("/creditos", resuelveCreditos)
 	http.HandleFunc("/dataset", resuelveDataSet)
@@ -93,6 +75,8 @@ func manejadorRequest() {
 func main() {
 	//X := [][]float64{}
 	//Y := []string{}
-	//cargarDatos()
 	manejadorRequest()
+	/*ds := DataSet{}
+	ds = fillDataSet()*/
+
 }

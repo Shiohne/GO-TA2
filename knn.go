@@ -161,8 +161,8 @@ func knn(X [][]float64, Y []string, K int) {
 }
 
 type DataSet struct {
-	data  [][]float64
-	label []string
+	data  [][]float64 `json:"data"`
+	label []string    `json:"label"`
 }
 
 func (ds *DataSet) readData() {

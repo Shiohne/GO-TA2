@@ -12,9 +12,9 @@ import (
 )
 
 //calculate euclidean distance betwee two slices
-func euclidian(source, dest []float64) float64 {
+func Euclidian(source, dest []float64) float64 {
 	distance := 0.0
-	for i, _ := range source {
+	for i := range source {
 		distance += math.Pow(source[i]-dest[i], 2)
 	}
 	return math.Sqrt(distance)
@@ -95,7 +95,7 @@ func (knn *KNN) predict(X [][]float64) []string {
 		)
 		//calculate distance between predict target data and surpervised data
 		for _, dest := range knn.data {
-			distList = append(distList, euclidian(source, dest))
+			distList = append(distList, Euclidian(source, dest))
 		}
 		//take top k nearest item's index
 		s := NewFloat64Slice(distList)
@@ -131,7 +131,7 @@ func knn(X [][]float64, Y []string, K int) {
 		testX  [][]float64
 		testY  []string
 	)
-	for i, _ := range X {
+	for i := range X {
 		if i%2 == 0 {
 			trainX = append(trainX, X[i])
 			trainY = append(trainY, Y[i])
@@ -149,7 +149,7 @@ func knn(X [][]float64, Y []string, K int) {
 
 	//check accuracy
 	correct := 0
-	for i, _ := range predicted {
+	for i := range predicted {
 		if predicted[i] == testY[i] {
 			correct += 1
 		}
@@ -160,7 +160,7 @@ func knn(X [][]float64, Y []string, K int) {
 
 }
 
-func loadDataSet() [][]string {
+func readDataSet() [][]string {
 	irisMatrix := [][]string{}
 	iris, err := os.Open("iris.csv")
 	if err != nil {
@@ -188,72 +188,68 @@ func loadDataSet() [][]string {
 		}
 		irisMatrix = append(irisMatrix, record)
 	}
+
 	return irisMatrix
 }
 
-type DataSet struct {
-	SepalLength []float64 `json:"SepalLength"`
-	SepalWidth  []float64 `json:"SepalWidth"`
-	PetalLength []float64 `json:"PetalLength"`
-	PetalWidth  []float64 `json:"PetalWidth"`
-	Data        [][]float64
-	Label       []string
+type Iris struct {
+	SepalLength float64 `json:"sepalLength"`
+	SepalWidth  float64 `json:"sepalWidth"`
+	PetalLength float64 `json:"petalLength"`
+	PetalWidth  float64 `json:"petalWidth"`
+	Species     string  `json:"species"`
 }
 
-func (ds *DataSet) readData() {
-	//read data
+type DataSet struct {
+	Irises []Iris
+	Data   [][]float64
+	Labels []string
+}
 
-	irisMatrix := loadDataSet()
+func (ds *DataSet) loadData() {
 
-	//split data into explaining and explained variables
-	sepalLength := []float64{}
-	sepalWidth := []float64{}
-	petalLength := []float64{}
-	petalWidth := []float64{}
-	X := [][]float64{}
-	Y := []string{}
+	// Carga el DataSet desde su CSV
+	irisMatrix := readDataSet()
 
-	for _, data := range irisMatrix {
+	// Se inicializa el Iris Struct para llenarlo con datos
+	iris := Iris{}
 
-		//convert str slice data into float slice data
-		temp := []float64{}
-		for _, i := range data[:4] {
-			parsedValue, err := strconv.ParseFloat(i, 64)
-			if err != nil {
-				panic(err)
-			}
-			temp = append(temp, parsedValue)
+	// X para la data del DataSet y Y para el Label
+
+	for i, data := range irisMatrix {
+		// Si es que el DataSet contiene una primera fila de títulos
+		if i == 0 {
+			continue
 		}
-		//explaining variables
-		X = append(X, temp)
 
-		//explained variables
-		parsedValue, _ := strconv.ParseFloat(data[0], 64)
-		sepalLength = append(sepalLength, parsedValue)
+		temp := []float64{}
+		// Convertimos los datos necesarios a floats para poder añadirlos
+		for j, value := range data[:] {
+			if j != 4 {
+				parsedValue, err := strconv.ParseFloat(value, 64)
+				if err != nil {
+					panic(err)
+				}
+				if j == 0 {
+					iris.SepalLength = parsedValue
+				} else if j == 1 {
+					iris.SepalWidth = parsedValue
+				} else if j == 2 {
+					iris.PetalLength = parsedValue
+				} else if j == 3 {
+					iris.PetalWidth = parsedValue
+				}
+				temp = append(temp, parsedValue)
+			}
 
-		parsedValue, _ = strconv.ParseFloat(data[1], 64)
-		sepalWidth = append(sepalWidth, parsedValue)
+			iris.Species = value
 
-		parsedValue, _ = strconv.ParseFloat(data[2], 64)
-		petalLength = append(petalLength, parsedValue)
+		}
+		ds.Data = append(ds.Data, temp)
+		ds.Labels = append(ds.Labels, data[4])
+		// Añadimos los datos al DataSet struct ahora convertidos
+		ds.Irises = append(ds.Irises, iris)
 
-		parsedValue, _ = strconv.ParseFloat(data[3], 64)
-		petalWidth = append(petalWidth, parsedValue)
-
-		Y = append(Y, data[4])
 	}
 
-	ds.SepalLength = sepalLength
-	ds.SepalWidth = sepalWidth
-	ds.PetalLength = petalLength
-	ds.PetalWidth = petalWidth
-	ds.Data = X
-	ds.Label = Y
-}
-
-func fillDataSet() DataSet {
-	ds := DataSet{}
-	ds.readData()
-	return ds
-	//knn(ds.data, ds.label, 5)
 }

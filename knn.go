@@ -79,7 +79,7 @@ type KNN struct {
 	labels []string
 }
 
-func (knn *KNN) loadData(X [][]float64, Y []string) {
+func (knn *KNN) fit(X [][]float64, Y []string) {
 	//read data
 	knn.data = X
 	knn.labels = Y
@@ -123,7 +123,7 @@ func (knn *KNN) predict(X [][]float64) []string {
 
 }
 
-func knn(X [][]float64, Y []string, K int) {
+func knnDemo(X [][]float64, Y []string, K int) {
 	//split data into training and test
 	var (
 		trainX [][]float64
@@ -144,7 +144,7 @@ func knn(X [][]float64, Y []string, K int) {
 	//training
 	knn := KNN{}
 	knn.k = K
-	knn.loadData(trainX, trainY)
+	knn.fit(trainX, trainY)
 	predicted := knn.predict(testX)
 
 	//check accuracy
@@ -158,6 +158,33 @@ func knn(X [][]float64, Y []string, K int) {
 	fmt.Printf("Predicciones correctas: %d de %d \n", correct, len(predicted))
 	fmt.Printf("Precisión de %0.3f%%\n", (float64(correct)/float64(len(predicted)))*100)
 
+}
+
+func knn(X [][]float64, Y []string, testX [][]float64, K int) []string {
+	//split data into training and test
+	var (
+		trainX [][]float64
+		trainY []string
+	)
+	for i := range X {
+		trainX = append(trainX, X[i])
+		trainY = append(trainY, Y[i])
+	}
+
+	//training
+	knn := KNN{}
+	knn.k = K
+	knn.fit(trainX, trainY)
+	predicted := knn.predict(testX)
+
+	predictions := []string{}
+
+	fmt.Printf("Usando K = %d vecinos\n", K)
+	fmt.Println("Predicciones:")
+	for i, label := range predicted {
+		predictions = append(predictions, fmt.Sprintf("Para la iris %d predigo que su especie es %s", i+1, label))
+	}
+	return predictions
 }
 
 func readDataSet() [][]string {
@@ -253,3 +280,24 @@ func (ds *DataSet) loadData() {
 	}
 
 }
+
+/*func main() {
+	iris1 := Iris{SepalLength: 5., SepalWidth: 3.5, PetalLength: 1.4, PetalWidth: 0.2} //Setosa
+	iris2 := Iris{SepalLength: 7, SepalWidth: 3.2, PetalLength: 4.7, PetalWidth: 1.4}  //Versicolor
+	iris3 := Iris{SepalLength: 6.3, SepalWidth: 3.3, PetalLength: 6, PetalWidth: 2.5}  // Virginica
+	irisesJSON := []Iris{iris1, iris2, iris3}
+	irisX := [][]float64{}
+	for i, _ := range irisesJSON {
+		irisI := []float64{irisesJSON[i].SepalLength, irisesJSON[i].SepalWidth, irisesJSON[i].PetalLength, irisesJSON[i].PetalWidth}
+		irisX = append(irisX, irisI)
+	}
+	//irises := [][]float64{irisX, irisY, irisZ}
+	fmt.Println(irisX)
+
+	ds := DataSet{}
+	ds.loadData()
+	fmt.Println(irisesJSON)
+	//knnSingle(ds.Data, ds.Labels, irises, 5)
+	//fmt.Println(ds.Data)
+
+}*/

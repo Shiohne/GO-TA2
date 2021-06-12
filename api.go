@@ -46,9 +46,19 @@ func resuelveKNN(res http.ResponseWriter, req *http.Request) {
 	bodyBytes, _ := ioutil.ReadAll(req.Body)
 
 	//res.Header().Set("Content-Type", "application/json")
-	var iris []Iris
-	json.Unmarshal(bodyBytes, &iris)
-	log.Println(iris[1].PetalLength, iris[1].PetalWidth, iris[1].SepalLength, iris[0].SepalWidth, iris[0].Species)
+	irisJSON := []Iris{}
+	json.Unmarshal(bodyBytes, &irisJSON)
+	log.Println(irisJSON)
+	irisX := [][]float64{}
+	for i, _ := range irisJSON {
+		irisI := []float64{irisJSON[i].SepalLength, irisJSON[i].SepalWidth, irisJSON[i].PetalLength, irisJSON[i].PetalWidth}
+		irisX = append(irisX, irisI)
+	}
+	predicciones := knn(irisData.Data, irisData.Labels, irisX, 5)
+	jsonBytes, _ := json.Marshal(predicciones)
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusOK)
+	res.Write(jsonBytes)
 
 }
 

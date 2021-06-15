@@ -7,12 +7,12 @@ import (
 	"net/http"
 )
 
-var irisData DataSet
+var metodoData DataSet
 
 func resuelveDataSet(res http.ResponseWriter, req *http.Request) {
 	log.Println("llamada al endpoint /dataset")
 
-	jsonBytes, _ := json.Marshal(irisData.Irises)
+	jsonBytes, _ := json.Marshal(metodoData.Metodos)
 
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusOK)
@@ -22,7 +22,7 @@ func resuelveDataSet(res http.ResponseWriter, req *http.Request) {
 func resuelveData(res http.ResponseWriter, req *http.Request) {
 	log.Println("llamada al endpoint /data")
 
-	jsonBytes, _ := json.Marshal(irisData.Data)
+	jsonBytes, _ := json.Marshal(metodoData.Data)
 
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusOK)
@@ -32,7 +32,7 @@ func resuelveData(res http.ResponseWriter, req *http.Request) {
 func resuelveLabel(res http.ResponseWriter, req *http.Request) {
 	log.Println("llamada al endpoint /labels")
 
-	jsonBytes, _ := json.Marshal(irisData.Labels)
+	jsonBytes, _ := json.Marshal(metodoData.Labels)
 
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusOK)
@@ -46,15 +46,15 @@ func resuelveKNN(res http.ResponseWriter, req *http.Request) {
 	bodyBytes, _ := ioutil.ReadAll(req.Body)
 
 	//res.Header().Set("Content-Type", "application/json")
-	irisJSON := []Iris{}
+	irisJSON := []Metodo{}
 	json.Unmarshal(bodyBytes, &irisJSON)
 	log.Println(irisJSON)
 	irisX := [][]float64{}
-	for i, _ := range irisJSON {
-		irisI := []float64{irisJSON[i].SepalLength, irisJSON[i].SepalWidth, irisJSON[i].PetalLength, irisJSON[i].PetalWidth}
+	for i := range irisJSON {
+		irisI := []float64{irisJSON[i].Edad, irisJSON[i].Tipo, irisJSON[i].Actividad, irisJSON[i].Insumo}
 		irisX = append(irisX, irisI)
 	}
-	predicciones := knn(irisData.Data, irisData.Labels, irisX, 5)
+	predicciones := knn(metodoData.Data, metodoData.Labels, irisX, 5)
 	jsonBytes, _ := json.Marshal(predicciones)
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusOK)
@@ -74,7 +74,7 @@ func manejadorRequest() {
 }
 
 func main() {
-	irisData.loadData()
+	metodoData.loadData()
 	manejadorRequest()
 
 }

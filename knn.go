@@ -118,6 +118,7 @@ func (knn *KNN) predict(X [][]float64) []string {
 		}
 		sort.Sort(a)
 		predictedLabel = append(predictedLabel, a[0].name)
+		fmt.Println(len(predictedLabel))
 	}
 	return predictedLabel
 
@@ -131,13 +132,17 @@ func knnDemo(X [][]float64, Y []string, K int) {
 		testX  [][]float64
 		testY  []string
 	)
-	for i := range X {
-		if i%2 == 0 {
-			trainX = append(trainX, X[i])
-			trainY = append(trainY, Y[i])
+	for i := 0.0; i < float64(len(X)); i++ {
+		if i == 0 {
+			fmt.Println(len(X))
+			fmt.Println(float64(len(X)) * 0.2)
+		}
+		if i < float64(len(X))*0.2 {
+			testX = append(testX, X[int(i)])
+			testY = append(testY, Y[int(i)])
 		} else {
-			testX = append(testX, X[i])
-			testY = append(testY, Y[i])
+			trainX = append(trainX, X[int(i)])
+			trainY = append(trainY, Y[int(i)])
 		}
 	}
 
@@ -182,19 +187,19 @@ func knn(X [][]float64, Y []string, testX [][]float64, K int) []string {
 	fmt.Printf("Usando K = %d vecinos\n", K)
 	fmt.Println("Predicciones:")
 	for i, label := range predicted {
-		predictions = append(predictions, fmt.Sprintf("Para la iris %d predigo que su especie es %s", i+1, label))
+		predictions = append(predictions, fmt.Sprintf("Para la paciente %d recomiendo el método %s", i+1, label))
 	}
 	return predictions
 }
 
 func readDataSet() [][]string {
-	irisMatrix := [][]string{}
-	iris, err := os.Open("iris.csv")
+	metodoMatrix := [][]string{}
+	metodo, err := os.Open("DAT PlaniFamiliar_01_Metodo.csv")
 	if err != nil {
 		panic(err)
 	}
-	defer iris.Close()
-	br := bufio.NewReader(iris)
+	defer metodo.Close()
+	br := bufio.NewReader(metodo)
 	r, _, err := br.ReadRune()
 	if err != nil {
 		panic(err)
@@ -213,37 +218,37 @@ func readDataSet() [][]string {
 		} else if err != nil {
 			panic(err)
 		}
-		irisMatrix = append(irisMatrix, record)
+		metodoMatrix = append(metodoMatrix, record)
 	}
 
-	return irisMatrix
+	return metodoMatrix
 }
 
-type Iris struct {
-	SepalLength float64 `json:"sepalLength"`
-	SepalWidth  float64 `json:"sepalWidth"`
-	PetalLength float64 `json:"petalLength"`
-	PetalWidth  float64 `json:"petalWidth"`
-	Species     string  `json:"species"`
+type Metodo struct {
+	Edad      float64 `json:"edad"`
+	Tipo      float64 `json:"tipo"`
+	Actividad float64 `json:"actividad"`
+	Insumo    float64 `json:"insumo"`
+	Metodo    string  `json:"metodo"`
 }
 
 type DataSet struct {
-	Irises []Iris
-	Data   [][]float64
-	Labels []string
+	Metodos []Metodo
+	Data    [][]float64
+	Labels  []string
 }
 
 func (ds *DataSet) loadData() {
 
 	// Carga el DataSet desde su CSV
-	irisMatrix := readDataSet()
+	metodoMatrix := readDataSet()
 
-	// Se inicializa el Iris Struct para llenarlo con datos
-	iris := Iris{}
+	// Se inicializa el metodo Struct para llenarlo con datos
+	metodo := Metodo{}
 
 	// X para la data del DataSet y Y para el Label
 
-	for i, data := range irisMatrix {
+	for i, data := range metodoMatrix {
 		// Si es que el DataSet contiene una primera fila de títulos
 		if i == 0 {
 			continue
@@ -258,37 +263,37 @@ func (ds *DataSet) loadData() {
 					panic(err)
 				}
 				if j == 0 {
-					iris.SepalLength = parsedValue
+					metodo.Edad = parsedValue
 				} else if j == 1 {
-					iris.SepalWidth = parsedValue
+					metodo.Tipo = parsedValue
 				} else if j == 2 {
-					iris.PetalLength = parsedValue
+					metodo.Actividad = parsedValue
 				} else if j == 3 {
-					iris.PetalWidth = parsedValue
+					metodo.Insumo = parsedValue
 				}
 				temp = append(temp, parsedValue)
 			}
 
-			iris.Species = value
+			metodo.Metodo = value
 
 		}
 		ds.Data = append(ds.Data, temp)
 		ds.Labels = append(ds.Labels, data[4])
 		// Añadimos los datos al DataSet struct ahora convertidos
-		ds.Irises = append(ds.Irises, iris)
+		ds.Metodos = append(ds.Metodos, metodo)
 
 	}
 
 }
 
 /*func main() {
-	iris1 := Iris{SepalLength: 5., SepalWidth: 3.5, PetalLength: 1.4, PetalWidth: 0.2} //Setosa
-	iris2 := Iris{SepalLength: 7, SepalWidth: 3.2, PetalLength: 4.7, PetalWidth: 1.4}  //Versicolor
-	iris3 := Iris{SepalLength: 6.3, SepalWidth: 3.3, PetalLength: 6, PetalWidth: 2.5}  // Virginica
-	irisesJSON := []Iris{iris1, iris2, iris3}
+	/*iris1 := metodo{Edad: 5., Tipo: 3.5, Actividad: 1.4, Insumo: 0.2} //Setosa
+	iris2 := metodo{Edad: 7, Tipo: 3.2, Actividad: 4.7, Insumo: 1.4}  //Versicolor
+	iris3 := metodo{Edad: 6.3, Tipo: 3.3, Actividad: 6, Insumo: 2.5}  // Virginica
+	irisesJSON := []metodo{iris1, iris2, iris3}
 	irisX := [][]float64{}
 	for i, _ := range irisesJSON {
-		irisI := []float64{irisesJSON[i].SepalLength, irisesJSON[i].SepalWidth, irisesJSON[i].PetalLength, irisesJSON[i].PetalWidth}
+		irisI := []float64{irisesJSON[i].Edad, irisesJSON[i].Tipo, irisesJSON[i].Actividad, irisesJSON[i].Insumo}
 		irisX = append(irisX, irisI)
 	}
 	//irises := [][]float64{irisX, irisY, irisZ}
@@ -296,8 +301,9 @@ func (ds *DataSet) loadData() {
 
 	ds := DataSet{}
 	ds.loadData()
-	fmt.Println(irisesJSON)
+	//knnDemo(ds.Data, ds.Labels, 5)
+	fmt.Println(ds.Data)
 	//knnSingle(ds.Data, ds.Labels, irises, 5)
 	//fmt.Println(ds.Data)
-
-}*/
+}
+*/

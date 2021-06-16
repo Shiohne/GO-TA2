@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"os"
+	"net/http"
 	"sort"
 	"strconv"
+
+	"github.com/go-gota/gota/dataframe"
 )
 
 //calculate euclidean distance betwee two slices
@@ -192,14 +194,15 @@ func knn(dataX [][]float64, dataY []string, testX [][]float64, K int) []string {
 	return predictions
 }
 
-func readDataSet() [][]string {
+func readDataSet() (dataX, dataY [][]string) {
+	url := "https://github.com/Shiohne/GO-TA2/raw/master/DAT%20PlaniFamiliar_01_Metodo.csv"
 	metodoMatrix := [][]string{}
-	metodo, err := os.Open("DAT PlaniFamiliar_01_Metodo.csv")
+	metodo, err := http.Get(url)
 	if err != nil {
 		panic(err)
 	}
-	defer metodo.Close()
-	br := bufio.NewReader(metodo)
+	defer metodo.Body.Close()
+	br := bufio.NewReader(metodo.Body)
 	r, _, err := br.ReadRune()
 	if err != nil {
 		panic(err)
@@ -211,6 +214,7 @@ func readDataSet() [][]string {
 	reader := csv.NewReader(br)
 	reader.Comma = ','
 	reader.LazyQuotes = true
+	df := dataframe.ReadCSV(br)
 	for {
 		record, err := reader.Read()
 		if err == io.EOF {
@@ -220,8 +224,15 @@ func readDataSet() [][]string {
 		}
 		metodoMatrix = append(metodoMatrix, record)
 	}
+	X := df.Select([]int{6, 9, 10, 11})
+	Y := df.Select(7)
+	dataX := X.Records()
+	dataY := Y.Records()
+	fmt.Println(dataX)
+	fmt.Println(dataY)
 
 	return metodoMatrix
+
 }
 
 type Metodo struct {
@@ -317,5 +328,5 @@ func (ds *DataSet) loadData() {
 func main() {
 	ds := DataSet{}
 	ds.loadData()
-	knnDemo(ds.Data, ds.Labels, 5)
+	//knnDemo(ds.Data, ds.Labels, 5)
 }

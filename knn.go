@@ -124,7 +124,7 @@ func (knn *KNN) predict(X [][]float64) []string {
 
 }
 
-func knnDemo(X [][]float64, Y []string, K int) {
+func knnDemo(dataX [][]float64, dataY []string, K int) {
 	//split data into training and test
 	var (
 		trainX [][]float64
@@ -132,17 +132,17 @@ func knnDemo(X [][]float64, Y []string, K int) {
 		testX  [][]float64
 		testY  []string
 	)
-	for i := 0.0; i < float64(len(X)); i++ {
+	for i := 0.0; i < float64(len(dataX)); i++ {
 		if i == 0 {
-			fmt.Println(len(X))
-			fmt.Println(float64(len(X)) * 0.2)
+			fmt.Println(len(dataX))
+			fmt.Println(float64(len(dataX)) * 0.2)
 		}
-		if i < float64(len(X))*0.2 {
-			testX = append(testX, X[int(i)])
-			testY = append(testY, Y[int(i)])
+		if i < float64(len(dataX))*0.2 {
+			testX = append(testX, dataX[int(i)])
+			testY = append(testY, dataY[int(i)])
 		} else {
-			trainX = append(trainX, X[int(i)])
-			trainY = append(trainY, Y[int(i)])
+			trainX = append(trainX, dataX[int(i)])
+			trainY = append(trainY, dataY[int(i)])
 		}
 	}
 
@@ -165,15 +165,15 @@ func knnDemo(X [][]float64, Y []string, K int) {
 
 }
 
-func knn(X [][]float64, Y []string, testX [][]float64, K int) []string {
+func knn(dataX [][]float64, dataY []string, testX [][]float64, K int) []string {
 	//split data into training and test
 	var (
 		trainX [][]float64
 		trainY []string
 	)
-	for i := range X {
-		trainX = append(trainX, X[i])
-		trainY = append(trainY, Y[i])
+	for i := range dataX {
+		trainX = append(trainX, dataX[i])
+		trainY = append(trainY, dataY[i])
 	}
 
 	//training
@@ -257,53 +257,65 @@ func (ds *DataSet) loadData() {
 		temp := []float64{}
 		// Convertimos los datos necesarios a floats para poder añadirlos
 		for j, value := range data[:] {
-			if j != 4 {
+
+			if j == 6 {
+				switch value {
+				case "12 a - 17 a":
+					metodo.Edad = 14.5
+					break
+				case "18 a - 29 a":
+					metodo.Edad = 23.5
+					break
+				case "30 a - 59 a":
+					metodo.Edad = 44.5
+					break
+				case "> 60 a":
+					metodo.Edad = 65.0
+					break
+				}
+				temp = append(temp, metodo.Edad)
+			} else if j == 7 {
+				// METODO
+				metodo.Metodo = value
+			} else if j == 9 {
+				// TIPOS - NUEVAS O CONT
+				switch value {
+				case "NUEVAS":
+					metodo.Tipo = 0.0
+					break
+				case "CONTINUADORAS":
+					metodo.Tipo = 1.0
+					break
+				}
+				temp = append(temp, metodo.Tipo)
+			} else if j == 10 {
 				parsedValue, err := strconv.ParseFloat(value, 64)
 				if err != nil {
 					panic(err)
 				}
-				if j == 0 {
-					metodo.Edad = parsedValue
-				} else if j == 1 {
-					metodo.Tipo = parsedValue
-				} else if j == 2 {
-					metodo.Actividad = parsedValue
-				} else if j == 3 {
-					metodo.Insumo = parsedValue
+				// ACTIVIDAD
+				metodo.Actividad = parsedValue
+				temp = append(temp, metodo.Actividad)
+			} else if j == 11 {
+				parsedValue, err := strconv.ParseFloat(value, 64)
+				if err != nil {
+					panic(err)
 				}
-				temp = append(temp, parsedValue)
+				// INSUMO
+				metodo.Insumo = parsedValue
+				temp = append(temp, metodo.Insumo)
 			}
-
-			metodo.Metodo = value
 
 		}
 		ds.Data = append(ds.Data, temp)
-		ds.Labels = append(ds.Labels, data[4])
+		ds.Labels = append(ds.Labels, data[7])
 		// Añadimos los datos al DataSet struct ahora convertidos
 		ds.Metodos = append(ds.Metodos, metodo)
-
 	}
-
 }
 
-/*func main() {
-	/*iris1 := metodo{Edad: 5., Tipo: 3.5, Actividad: 1.4, Insumo: 0.2} //Setosa
-	iris2 := metodo{Edad: 7, Tipo: 3.2, Actividad: 4.7, Insumo: 1.4}  //Versicolor
-	iris3 := metodo{Edad: 6.3, Tipo: 3.3, Actividad: 6, Insumo: 2.5}  // Virginica
-	irisesJSON := []metodo{iris1, iris2, iris3}
-	irisX := [][]float64{}
-	for i, _ := range irisesJSON {
-		irisI := []float64{irisesJSON[i].Edad, irisesJSON[i].Tipo, irisesJSON[i].Actividad, irisesJSON[i].Insumo}
-		irisX = append(irisX, irisI)
-	}
-	//irises := [][]float64{irisX, irisY, irisZ}
-	fmt.Println(irisX)
-
+func main() {
 	ds := DataSet{}
 	ds.loadData()
-	//knnDemo(ds.Data, ds.Labels, 5)
-	fmt.Println(ds.Data)
-	//knnSingle(ds.Data, ds.Labels, irises, 5)
-	//fmt.Println(ds.Data)
+	knnDemo(ds.Data, ds.Labels, 5)
 }
-*/

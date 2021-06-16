@@ -45,21 +45,23 @@ func resuelveKNN(res http.ResponseWriter, req *http.Request) {
 
 	bodyBytes, _ := ioutil.ReadAll(req.Body)
 
-	//res.Header().Set("Content-Type", "application/json")
-	irisJSON := []Metodo{}
-	json.Unmarshal(bodyBytes, &irisJSON)
-	log.Println(irisJSON)
-	irisX := [][]float64{}
-	for i := range irisJSON {
-		irisI := []float64{irisJSON[i].Edad, irisJSON[i].Tipo, irisJSON[i].Actividad, irisJSON[i].Insumo}
-		irisX = append(irisX, irisI)
+	metodoJSON := []Metodo{}
+	json.Unmarshal(bodyBytes, &metodoJSON)
+
+	log.Println(metodoJSON)
+	metodoX := [][]float64{}
+
+	for i := range metodoJSON {
+		metodo := []float64{metodoJSON[i].Edad, metodoJSON[i].Tipo, metodoJSON[i].Actividad, metodoJSON[i].Insumo}
+		metodoX = append(metodoX, metodo)
 	}
-	predicciones := knn(metodoData.Data, metodoData.Labels, irisX, 5)
+
+	predicciones := knn(metodoData.Data, metodoData.Labels, metodoX, 5)
+
 	jsonBytes, _ := json.Marshal(predicciones)
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusOK)
 	res.Write(jsonBytes)
-
 }
 
 func manejadorRequest() {

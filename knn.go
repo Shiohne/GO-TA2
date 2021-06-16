@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/csv"
 	"fmt"
-	"io"
 	"math"
 	"net/http"
 	"sort"
@@ -194,15 +193,17 @@ func knn(dataX [][]float64, dataY []string, testX [][]float64, K int) []string {
 	return predictions
 }
 
-func readDataSet() (dataX, dataY [][]string) {
+func readDataSet() [][]string {
+	// Obtiene el dataset desde el github
 	url := "https://github.com/Shiohne/GO-TA2/raw/master/DAT%20PlaniFamiliar_01_Metodo.csv"
-	metodoMatrix := [][]string{}
-	metodo, err := http.Get(url)
+	dataset, err := http.Get(url)
 	if err != nil {
 		panic(err)
 	}
-	defer metodo.Body.Close()
-	br := bufio.NewReader(metodo.Body)
+	defer dataset.Body.Close()
+
+	// Maneja la codificación del archivo si es que hubiera
+	br := bufio.NewReader(dataset.Body)
 	r, _, err := br.ReadRune()
 	if err != nil {
 		panic(err)
@@ -211,27 +212,16 @@ func readDataSet() (dataX, dataY [][]string) {
 		br.UnreadRune()
 	}
 
+	// Lee el dataset
 	reader := csv.NewReader(br)
 	reader.Comma = ','
 	reader.LazyQuotes = true
-	df := dataframe.ReadCSV(br)
-	for {
-		record, err := reader.Read()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			panic(err)
-		}
-		metodoMatrix = append(metodoMatrix, record)
-	}
-	X := df.Select([]int{6, 9, 10, 11})
-	Y := df.Select(7)
-	dataX := X.Records()
-	dataY := Y.Records()
-	fmt.Println(dataX)
-	fmt.Println(dataY)
 
-	return metodoMatrix
+	// Almacena en un dataframe y separa en dataX(features) y dataY(labels)
+	df := dataframe.ReadCSV(br)
+	dfFilter := df.Select([]int{6, 9, 10, 11, 7})
+	data := dfFilter.Records()
+	return data
 
 }
 
@@ -251,25 +241,26 @@ type DataSet struct {
 
 func (ds *DataSet) loadData() {
 
-	// Carga el DataSet desde su CSV
-	metodoMatrix := readDataSet()
+	// Cargar el DataSet desde su CSV
+	data := readDataSet()
 
-	// Se inicializa el metodo Struct para llenarlo con datos
+	// Inicializar el metodo Struct para llenarlo con datos
 	metodo := Metodo{}
 
-	// X para la data del DataSet y Y para el Label
-
-	for i, data := range metodoMatrix {
-		// Si es que el DataSet contiene una primera fila de títulos
+	// Almacenar los datos en las estructuras
+	for i, metodos := range data {
+		// Drop de la primera fila (titles)
 		if i == 0 {
 			continue
 		}
 
 		temp := []float64{}
-		// Convertimos los datos necesarios a floats para poder añadirlos
-		for j, value := range data[:] {
+		// Recorrer las columnas
+		for j, value := range metodos {
 
-			if j == 6 {
+			// Convertir los datos según su columna
+			if j == 0 {
+				// Sacar la media de las edades para estandarizar los datos
 				switch value {
 				case "12 a - 17 a":
 					metodo.Edad = 14.5
@@ -284,12 +275,10 @@ func (ds *DataSet) loadData() {
 					metodo.Edad = 65.0
 					break
 				}
+				// EDAD
 				temp = append(temp, metodo.Edad)
-			} else if j == 7 {
-				// METODO
-				metodo.Metodo = value
-			} else if j == 9 {
-				// TIPOS - NUEVAS O CONT
+			} else if j == 1 {
+				// Si son Nuevas = 0 y si son Continuadoras = 1
 				switch value {
 				case "NUEVAS":
 					metodo.Tipo = 0.0
@@ -298,8 +287,10 @@ func (ds *DataSet) loadData() {
 					metodo.Tipo = 1.0
 					break
 				}
+				// TIPO DE USUARIA
 				temp = append(temp, metodo.Tipo)
-			} else if j == 10 {
+			} else if j == 2 {
+				// int a float para facilitar operaciones
 				parsedValue, err := strconv.ParseFloat(value, 64)
 				if err != nil {
 					panic(err)
@@ -307,7 +298,8 @@ func (ds *DataSet) loadData() {
 				// ACTIVIDAD
 				metodo.Actividad = parsedValue
 				temp = append(temp, metodo.Actividad)
-			} else if j == 11 {
+			} else if j == 3 {
+				// int a float para facilitar operaciones
 				parsedValue, err := strconv.ParseFloat(value, 64)
 				if err != nil {
 					panic(err)
@@ -315,12 +307,15 @@ func (ds *DataSet) loadData() {
 				// INSUMO
 				metodo.Insumo = parsedValue
 				temp = append(temp, metodo.Insumo)
+			} else if j == 4 {
+				// METODO
+				metodo.Metodo = value
 			}
 
 		}
+		// Añadir los datos al DataSet struct ahora convertidos
 		ds.Data = append(ds.Data, temp)
-		ds.Labels = append(ds.Labels, data[7])
-		// Añadimos los datos al DataSet struct ahora convertidos
+		ds.Labels = append(ds.Labels, metodos[4])
 		ds.Metodos = append(ds.Metodos, metodo)
 	}
 }
@@ -328,5 +323,6 @@ func (ds *DataSet) loadData() {
 func main() {
 	ds := DataSet{}
 	ds.loadData()
+	fmt.Println(ds.Metodos)
 	//knnDemo(ds.Data, ds.Labels, 5)
 }

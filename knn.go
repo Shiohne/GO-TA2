@@ -4,21 +4,13 @@ import (
 	"bufio"
 	"encoding/csv"
 	"fmt"
-	"io"
 	"math"
-	"os"
+	"net/http"
 	"sort"
 	"strconv"
-)
 
-//calculate euclidean distance betwee two slices
-func Euclidian(source, dest []float64) float64 {
-	distance := 0.0
-	for i := range source {
-		distance += math.Pow(source[i]-dest[i], 2)
-	}
-	return math.Sqrt(distance)
-}
+	"github.com/go-gota/gota/dataframe"
+)
 
 //argument sort
 type Slice struct {
@@ -73,16 +65,19 @@ func Counter(target []string) map[string]int {
 	return counter
 }
 
+//calculate euclidean distance betwee two slices
+func Euclidian(source, dest []float64) float64 {
+	distance := 0.0
+	for i := range source {
+		distance += math.Pow(source[i]-dest[i], 2)
+	}
+	return math.Sqrt(distance)
+}
+
 type KNN struct {
 	k      int
 	data   [][]float64
 	labels []string
-}
-
-func (knn *KNN) fit(X [][]float64, Y []string) {
-	//read data
-	knn.data = X
-	knn.labels = Y
 }
 
 func (knn *KNN) predict(X [][]float64) []string {
@@ -90,15 +85,15 @@ func (knn *KNN) predict(X [][]float64) []string {
 	predictedLabel := []string{}
 	for _, source := range X {
 		var (
-			distList   []float64
+			distances  []float64
 			nearLabels []string
 		)
 		//calculate distance between predict target data and surpervised data
 		for _, dest := range knn.data {
-			distList = append(distList, Euclidian(source, dest))
+			distances = append(distances, Euclidian(source, dest))
 		}
 		//take top k nearest item's index
-		s := NewFloat64Slice(distList)
+		s := NewFloat64Slice(distances)
 		sort.Sort(s)
 		targetIndex := s.idx[:knn.k]
 
@@ -118,13 +113,14 @@ func (knn *KNN) predict(X [][]float64) []string {
 		}
 		sort.Sort(a)
 		predictedLabel = append(predictedLabel, a[0].name)
-		fmt.Println(len(predictedLabel))
+		//fmt.Println(len(predictedLabel))
 	}
 	return predictedLabel
 
 }
 
-func knnDemo(dataX [][]float64, dataY []string, K int) {
+// Funcion con la que se realizaron pruebas para hallar el K más óptimo y como resultado fue el 7
+func knnDemo(dataX [][]float64, dataY []string) {
 	//split data into training and test
 	var (
 		trainX [][]float64
@@ -135,9 +131,9 @@ func knnDemo(dataX [][]float64, dataY []string, K int) {
 	for i := 0.0; i < float64(len(dataX)); i++ {
 		if i == 0 {
 			fmt.Println(len(dataX))
-			fmt.Println(float64(len(dataX)) * 0.2)
+			fmt.Println(float64(len(dataX)) * 0.005)
 		}
-		if i < float64(len(dataX))*0.2 {
+		if i < float64(len(dataX))*0.005 {
 			testX = append(testX, dataX[int(i)])
 			testY = append(testY, dataY[int(i)])
 		} else {
@@ -148,58 +144,69 @@ func knnDemo(dataX [][]float64, dataY []string, K int) {
 
 	//training
 	knn := KNN{}
-	knn.k = K
-	knn.fit(trainX, trainY)
-	predicted := knn.predict(testX)
+	knn.data = trainX
+	knn.labels = trainY
+	bestAcc := 0.0
+	bestK := 0
 
-	//check accuracy
-	correct := 0
-	for i := range predicted {
-		if predicted[i] == testY[i] {
-			correct += 1
+	for i := 1; i < 42; i++ {
+		knn.k = i
+		predicted := knn.predict(testX)
+
+		//check accuracy
+		correct := 0
+		for i := range predicted {
+			if predicted[i] == testY[i] {
+				correct += 1
+			}
 		}
-	}
-	fmt.Printf("Usando K = %d vecinos\n", K)
-	fmt.Printf("Predicciones correctas: %d de %d \n", correct, len(predicted))
-	fmt.Printf("Precisión de %0.3f%%\n", (float64(correct)/float64(len(predicted)))*100)
+		precision := float64(correct) / float64(len(predicted))
 
+		if bestAcc < precision {
+			bestK = knn.k
+		}
+
+		fmt.Printf("Usando K = %d vecinos\n", knn.k)
+		fmt.Printf("Predicciones correctas: %d de %d \n", correct, len(predicted))
+		fmt.Printf("Precisión de %0.10f%%\n", precision*100)
+	}
+	fmt.Printf("El mejor K es de %d", bestK)
 }
 
-func knn(dataX [][]float64, dataY []string, testX [][]float64, K int) []string {
-	//split data into training and test
-	var (
-		trainX [][]float64
-		trainY []string
-	)
-	for i := range dataX {
-		trainX = append(trainX, dataX[i])
-		trainY = append(trainY, dataY[i])
-	}
+func knn(dataX [][]float64, dataY []string, testX [][]float64) Respuesta {
 
-	//training
+	// Insertar datos al knn
 	knn := KNN{}
-	knn.k = K
-	knn.fit(trainX, trainY)
+	knn.data = dataX
+	knn.labels = dataY
+	knn.k = 7
+
+	// Predecir los métodos anticonceptivos
 	predicted := knn.predict(testX)
 
-	predictions := []string{}
+	// Inicializar las estructuras que reciben los resultados
+	resultado := Resultado{}
+	respuesta := Respuesta{}
 
-	fmt.Printf("Usando K = %d vecinos\n", K)
-	fmt.Println("Predicciones:")
 	for i, label := range predicted {
-		predictions = append(predictions, fmt.Sprintf("Para la paciente %d recomiendo el método %s", i+1, label))
+		resultado.Prediccion = fmt.Sprintf("Para la paciente %d recomiendo el método %s", i+1, label)
+		respuesta.Resultados = append(respuesta.Resultados, resultado)
 	}
-	return predictions
+	respuesta.Detalles = fmt.Sprintf("Usando K = %d vecinos", knn.k)
+	return respuesta
 }
 
 func readDataSet() [][]string {
-	metodoMatrix := [][]string{}
-	metodo, err := os.Open("DAT PlaniFamiliar_01_Metodo.csv")
+	// Obtiene el dataset desde el github
+	url := "https://github.com/Shiohne/GO-TA2/raw/master/DAT%20PlaniFamiliar_01_Metodo.csv"
+	dataset, err := http.Get(url)
 	if err != nil {
 		panic(err)
 	}
-	defer metodo.Close()
-	br := bufio.NewReader(metodo)
+	defer dataset.Body.Close()
+
+	// Maneja la codificación del archivo si es que hubiera
+	br := bufio.NewReader(dataset.Body)
 	r, _, err := br.ReadRune()
 	if err != nil {
 		panic(err)
@@ -208,20 +215,26 @@ func readDataSet() [][]string {
 		br.UnreadRune()
 	}
 
+	// Lee el dataset
 	reader := csv.NewReader(br)
 	reader.Comma = ','
 	reader.LazyQuotes = true
-	for {
-		record, err := reader.Read()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			panic(err)
-		}
-		metodoMatrix = append(metodoMatrix, record)
-	}
 
-	return metodoMatrix
+	// Almacena en un dataframe y separa en dataX(features) y dataY(labels)
+	df := dataframe.ReadCSV(br)
+	dfFilter := df.Select([]int{6, 9, 10, 11, 7})
+	data := dfFilter.Records()
+	return data
+
+}
+
+type Resultado struct {
+	Prediccion string `json:"prediccion"`
+}
+
+type Respuesta struct {
+	Detalles   string      `json:"detalles"`
+	Resultados []Resultado `json:"resultados"`
 }
 
 type Metodo struct {
@@ -233,62 +246,57 @@ type Metodo struct {
 }
 
 type DataSet struct {
-	Metodos []Metodo
+	Metodos []Metodo `json:"metodos"`
 	Data    [][]float64
 	Labels  []string
 }
 
 func (ds *DataSet) loadData() {
 
-	// Carga el DataSet desde su CSV
-	metodoMatrix := readDataSet()
+	// Cargar el DataSet desde su CSV
+	data := readDataSet()
 
-	// Se inicializa el metodo Struct para llenarlo con datos
+	// Inicializar el metodo Struct para llenarlo con datos
 	metodo := Metodo{}
 
-	// X para la data del DataSet y Y para el Label
-
-	for i, data := range metodoMatrix {
-		// Si es que el DataSet contiene una primera fila de títulos
+	// Almacenar los datos en las estructuras
+	for i, metodos := range data {
+		// Drop de la primera fila (titles)
 		if i == 0 {
 			continue
 		}
 
 		temp := []float64{}
-		// Convertimos los datos necesarios a floats para poder añadirlos
-		for j, value := range data[:] {
+		// Recorrer las columnas
+		for j, value := range metodos {
 
-			if j == 6 {
+			// Convertir los datos según su columna
+			if j == 0 {
+				// Sacar la media de las edades para estandarizar los datos
 				switch value {
 				case "12 a - 17 a":
 					metodo.Edad = 14.5
-					break
 				case "18 a - 29 a":
 					metodo.Edad = 23.5
-					break
 				case "30 a - 59 a":
 					metodo.Edad = 44.5
-					break
 				case "> 60 a":
 					metodo.Edad = 65.0
-					break
 				}
+				// EDAD
 				temp = append(temp, metodo.Edad)
-			} else if j == 7 {
-				// METODO
-				metodo.Metodo = value
-			} else if j == 9 {
-				// TIPOS - NUEVAS O CONT
+			} else if j == 1 {
+				// Si son Nuevas = 0 y si son Continuadoras = 1
 				switch value {
 				case "NUEVAS":
 					metodo.Tipo = 0.0
-					break
 				case "CONTINUADORAS":
 					metodo.Tipo = 1.0
-					break
 				}
+				// TIPO DE USUARIA
 				temp = append(temp, metodo.Tipo)
-			} else if j == 10 {
+			} else if j == 2 {
+				// int a float para facilitar operaciones
 				parsedValue, err := strconv.ParseFloat(value, 64)
 				if err != nil {
 					panic(err)
@@ -296,7 +304,8 @@ func (ds *DataSet) loadData() {
 				// ACTIVIDAD
 				metodo.Actividad = parsedValue
 				temp = append(temp, metodo.Actividad)
-			} else if j == 11 {
+			} else if j == 3 {
+				// int a float para facilitar operaciones
 				parsedValue, err := strconv.ParseFloat(value, 64)
 				if err != nil {
 					panic(err)
@@ -304,18 +313,15 @@ func (ds *DataSet) loadData() {
 				// INSUMO
 				metodo.Insumo = parsedValue
 				temp = append(temp, metodo.Insumo)
+			} else if j == 4 {
+				// METODO
+				metodo.Metodo = value
 			}
 
 		}
+		// Añadir los datos al DataSet struct ahora convertidos
 		ds.Data = append(ds.Data, temp)
-		ds.Labels = append(ds.Labels, data[7])
-		// Añadimos los datos al DataSet struct ahora convertidos
+		ds.Labels = append(ds.Labels, metodos[4])
 		ds.Metodos = append(ds.Metodos, metodo)
 	}
-}
-
-func main() {
-	ds := DataSet{}
-	ds.loadData()
-	knnDemo(ds.Data, ds.Labels, 5)
 }

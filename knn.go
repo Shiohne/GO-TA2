@@ -12,15 +12,6 @@ import (
 	"github.com/go-gota/gota/dataframe"
 )
 
-//calculate euclidean distance betwee two slices
-func Euclidian(source, dest []float64) float64 {
-	distance := 0.0
-	for i := range source {
-		distance += math.Pow(source[i]-dest[i], 2)
-	}
-	return math.Sqrt(distance)
-}
-
 //argument sort
 type Slice struct {
 	sort.Interface
@@ -74,16 +65,19 @@ func Counter(target []string) map[string]int {
 	return counter
 }
 
+//calculate euclidean distance betwee two slices
+func Euclidian(source, dest []float64) float64 {
+	distance := 0.0
+	for i := range source {
+		distance += math.Pow(source[i]-dest[i], 2)
+	}
+	return math.Sqrt(distance)
+}
+
 type KNN struct {
 	k      int
 	data   [][]float64
 	labels []string
-}
-
-func (knn *KNN) fit(X [][]float64, Y []string) {
-	//read data
-	knn.data = X
-	knn.labels = Y
 }
 
 func (knn *KNN) predict(X [][]float64) []string {
@@ -91,15 +85,15 @@ func (knn *KNN) predict(X [][]float64) []string {
 	predictedLabel := []string{}
 	for _, source := range X {
 		var (
-			distList   []float64
+			distances  []float64
 			nearLabels []string
 		)
 		//calculate distance between predict target data and surpervised data
 		for _, dest := range knn.data {
-			distList = append(distList, Euclidian(source, dest))
+			distances = append(distances, Euclidian(source, dest))
 		}
 		//take top k nearest item's index
-		s := NewFloat64Slice(distList)
+		s := NewFloat64Slice(distances)
 		sort.Sort(s)
 		targetIndex := s.idx[:knn.k]
 
@@ -119,13 +113,14 @@ func (knn *KNN) predict(X [][]float64) []string {
 		}
 		sort.Sort(a)
 		predictedLabel = append(predictedLabel, a[0].name)
-		fmt.Println(len(predictedLabel))
+		//fmt.Println(len(predictedLabel))
 	}
 	return predictedLabel
 
 }
 
-func knnDemo(dataX [][]float64, dataY []string, K int) {
+// Funcion con la que se realizaron pruebas para hallar el K más óptimo y como resultado fue el 7
+func knnDemo(dataX [][]float64, dataY []string) {
 	//split data into training and test
 	var (
 		trainX [][]float64
@@ -136,9 +131,9 @@ func knnDemo(dataX [][]float64, dataY []string, K int) {
 	for i := 0.0; i < float64(len(dataX)); i++ {
 		if i == 0 {
 			fmt.Println(len(dataX))
-			fmt.Println(float64(len(dataX)) * 0.2)
+			fmt.Println(float64(len(dataX)) * 0.005)
 		}
-		if i < float64(len(dataX))*0.2 {
+		if i < float64(len(dataX))*0.005 {
 			testX = append(testX, dataX[int(i)])
 			testY = append(testY, dataY[int(i)])
 		} else {
@@ -149,48 +144,56 @@ func knnDemo(dataX [][]float64, dataY []string, K int) {
 
 	//training
 	knn := KNN{}
-	knn.k = K
-	knn.fit(trainX, trainY)
-	predicted := knn.predict(testX)
+	knn.data = trainX
+	knn.labels = trainY
+	bestAcc := 0.0
+	bestK := 0
 
-	//check accuracy
-	correct := 0
-	for i := range predicted {
-		if predicted[i] == testY[i] {
-			correct += 1
+	for i := 1; i < 42; i++ {
+		knn.k = i
+		predicted := knn.predict(testX)
+
+		//check accuracy
+		correct := 0
+		for i := range predicted {
+			if predicted[i] == testY[i] {
+				correct += 1
+			}
 		}
-	}
-	fmt.Printf("Usando K = %d vecinos\n", K)
-	fmt.Printf("Predicciones correctas: %d de %d \n", correct, len(predicted))
-	fmt.Printf("Precisión de %0.3f%%\n", (float64(correct)/float64(len(predicted)))*100)
+		precision := float64(correct) / float64(len(predicted))
 
+		if bestAcc < precision {
+			bestK = knn.k
+		}
+
+		fmt.Printf("Usando K = %d vecinos\n", knn.k)
+		fmt.Printf("Predicciones correctas: %d de %d \n", correct, len(predicted))
+		fmt.Printf("Precisión de %0.10f%%\n", precision*100)
+	}
+	fmt.Printf("El mejor K es de %d", bestK)
 }
 
-func knn(dataX [][]float64, dataY []string, testX [][]float64, K int) []string {
-	//split data into training and test
-	var (
-		trainX [][]float64
-		trainY []string
-	)
-	for i := range dataX {
-		trainX = append(trainX, dataX[i])
-		trainY = append(trainY, dataY[i])
-	}
+func knn(dataX [][]float64, dataY []string, testX [][]float64) Respuesta {
 
-	//training
+	// Insertar datos al knn
 	knn := KNN{}
-	knn.k = K
-	knn.fit(trainX, trainY)
+	knn.data = dataX
+	knn.labels = dataY
+	knn.k = 7
+
+	// Predecir los métodos anticonceptivos
 	predicted := knn.predict(testX)
 
-	predictions := []string{}
+	// Inicializar las estructuras que reciben los resultados
+	resultado := Resultado{}
+	respuesta := Respuesta{}
 
-	fmt.Printf("Usando K = %d vecinos\n", K)
-	fmt.Println("Predicciones:")
 	for i, label := range predicted {
-		predictions = append(predictions, fmt.Sprintf("Para la paciente %d recomiendo el método %s", i+1, label))
+		resultado.Prediccion = fmt.Sprintf("Para la paciente %d recomiendo el método %s", i+1, label)
+		respuesta.Resultados = append(respuesta.Resultados, resultado)
 	}
-	return predictions
+	respuesta.Detalles = fmt.Sprintf("Usando K = %d vecinos", knn.k)
+	return respuesta
 }
 
 func readDataSet() [][]string {
@@ -225,6 +228,15 @@ func readDataSet() [][]string {
 
 }
 
+type Resultado struct {
+	Prediccion string `json:"prediccion"`
+}
+
+type Respuesta struct {
+	Detalles   string      `json:"detalles"`
+	Resultados []Resultado `json:"resultados"`
+}
+
 type Metodo struct {
 	Edad      float64 `json:"edad"`
 	Tipo      float64 `json:"tipo"`
@@ -234,7 +246,7 @@ type Metodo struct {
 }
 
 type DataSet struct {
-	Metodos []Metodo
+	Metodos []Metodo `json:"metodos"`
 	Data    [][]float64
 	Labels  []string
 }
@@ -264,16 +276,12 @@ func (ds *DataSet) loadData() {
 				switch value {
 				case "12 a - 17 a":
 					metodo.Edad = 14.5
-					break
 				case "18 a - 29 a":
 					metodo.Edad = 23.5
-					break
 				case "30 a - 59 a":
 					metodo.Edad = 44.5
-					break
 				case "> 60 a":
 					metodo.Edad = 65.0
-					break
 				}
 				// EDAD
 				temp = append(temp, metodo.Edad)
@@ -282,10 +290,8 @@ func (ds *DataSet) loadData() {
 				switch value {
 				case "NUEVAS":
 					metodo.Tipo = 0.0
-					break
 				case "CONTINUADORAS":
 					metodo.Tipo = 1.0
-					break
 				}
 				// TIPO DE USUARIA
 				temp = append(temp, metodo.Tipo)
@@ -318,11 +324,4 @@ func (ds *DataSet) loadData() {
 		ds.Labels = append(ds.Labels, metodos[4])
 		ds.Metodos = append(ds.Metodos, metodo)
 	}
-}
-
-func main() {
-	ds := DataSet{}
-	ds.loadData()
-	fmt.Println(ds.Metodos)
-	//knnDemo(ds.Data, ds.Labels, 5)
 }

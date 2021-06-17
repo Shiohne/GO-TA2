@@ -9,7 +9,7 @@ import { DatasetService } from '../services/dataset.service';
   templateUrl: './data-set.component.html',
   styleUrls: ['./data-set.component.css']
 })
-export class DataSetComponent implements OnInit {
+export class DataSetComponent implements AfterViewInit {
   displayedColumns: string[] = ['edad','tipo', 'actividad', 'insumo', 'metodo'];
   datos: any[]= [];
   dataSource = new MatTableDataSource<Dataset>();
@@ -18,7 +18,7 @@ export class DataSetComponent implements OnInit {
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
-  ngOnInit() {
+  ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
     this.getDataset()
   }

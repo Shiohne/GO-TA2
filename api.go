@@ -5,6 +5,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 )
 
 var metodoData DataSet
@@ -36,9 +39,10 @@ func resuelveKNN(res http.ResponseWriter, req *http.Request) {
 		metodoMap = append(metodoMap, metodo)
 	}
 
-	predicciones := knn(metodoData.Data, metodoData.Labels, metodoMap, 5)
+	predicciones := knn(metodoData.Data, metodoData.Labels, metodoMap)
 
 	jsonBytes, _ := json.Marshal(predicciones)
+
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusOK)
 	res.Write(jsonBytes)
@@ -50,7 +54,8 @@ func manejadorRequest() {
 	http.HandleFunc("/knn", resuelveKNN)
 
 	// Establecer el puerto de servicio
-	log.Fatal(http.ListenAndServe(":9000", nil))
+	router := mux.NewRouter()
+	log.Fatal(http.ListenAndServe(":3000", handlers.CORS(handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}), handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS"}), handlers.AllowedOrigins([]string{"*"}))(router)))
 }
 
 func main() {

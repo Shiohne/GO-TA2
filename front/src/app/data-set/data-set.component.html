@@ -9,7 +9,7 @@
   
       <!-- Name Column -->
       <ng-container matColumnDef="tipo">
-        <th mat-header-cell *matHeaderCellDef> Tipo </th>
+        <th mat-header-cell *matHeaderCellDef> Tipo (0 = Nueva, 1 = Continuadora) </th>
         <td mat-cell *matCellDef="let entrada"> {{entrada.tipo}} </td>
       </ng-container>
   
@@ -27,7 +27,7 @@
 
       <!-- Symbol Column -->
       <ng-container matColumnDef="metodo">
-        <th mat-header-cell *matHeaderCellDef> Metodo </th>
+        <th mat-header-cell *matHeaderCellDef> Metodo Anticonceptivo </th>
         <td mat-cell *matCellDef="let entrada"> {{entrada.metodo}} </td>
       </ng-container>
   

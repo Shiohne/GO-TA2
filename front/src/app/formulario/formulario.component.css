@@ -1,7 +1,13 @@
 
-.box{
-  width: 50%;
-  border: 1px solid rgb(145,138,138);
-  border-radius: 0px 20px 20px 20px;
-  margin-left: 400px;
+.div-main{
+  width: 100%;
+  margin-top: 10%;
 }
+table {
+  width: 100%;
+  text-align: left;
+}
+button{
+  margin-top: 20px;
+}
+

@@ -1,77 +1,61 @@
-<div class="card">
-  <form [formGroup]="userForm">
-    <div class="mt-5 box">
-      <div class="form-row">
-        <div class="col-md-12">
-          <div class="form-group">
-            <label > Edad </label>
-          </div>
-          <div class="form-row">
-              <div class="col">
-                <input type="text" formControlName="name" class="form-control" placeholder="name">
-              </div>
-          </div>
-        </div>
-        <div class="col-md-12">
-          <div class="form-group">
-            <label > Tipo </label>
-          </div>
-          <div class="form-row">
-              <div class="col">
-                <input type="text" formControlName="address" class="form-control" placeholder="adress">
-              </div>
-          </div>
-        </div>
-        <div class="col-md-12">
-          <div class="form-group">
-            <label > Actividad </label>
-          </div>
-          <div class="form-row">
-              <div class="col">
-                <input type="text" formControlName="ContactNo" class="form-control" placeholder="ContactNo">
-              </div>
-          </div>
-        </div>
-        <div class="col-md-12">
-          <div class="form-group">
-            <label > Insumo </label>
-          </div>
-          <div class="form-row">
-              <div class="col">
-                <input type="text" formControlName="gender" class="form-control" placeholder="gender">
-              </div>
-          </div>
-        </div>
-        <br>
-        <div class="form-row mt-4">
-          <div class="col-md-6">
-            <button type="button" class="btn btn-primary" (click)="addItem()">Add</button> &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp;&nbsp;    &nbsp; &nbsp;
-            <button type="button" class="btn btn-primary" (click)="reset()">reset</button>
-          </div>
-        </div>
-      </div>
-    </div>
+<mat-card class="div-main">
+  <form [formGroup] = 'form'>
+    <mat-form-field appearance="fill">
+      <mat-label>Edad</mat-label>
+      <input matInput formControlName=edad>
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>Tipo</mat-label>
+      <input matInput formControlName=tipo>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Actividad</mat-label>
+      <input matInput formControlName=actividad>
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>Insumo</mat-label>
+      <input matInput formControlName=insumo>
+    </mat-form-field>
   </form>
-  <div class="col-md-8 mt-4 mb-4">
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th>Edad</th>
-          <th>Tipo</th>
-          <th>Actividad</th>
-          <th>Insumo</th>
-          <th>Quitar</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor = "let item of listData">
-          <td>{{item.name}}</td>
-          <td>{{item.address}}</td>
-          <td>{{item.ContactNo}}</td>
-          <td>{{item.gender}}</td>
-          <td><button type="button" class="btn btn-primary" (click)="removeItems(item)">Remove</button></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <button mat-raised-button color="primary" (click)="addItem()">Aceptar</button>
+</mat-card>
+
+<mat-divider></mat-divider>
+
+<div class="div-table">
+<table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+
+  <!-- Position Column -->
+  <ng-container matColumnDef="edad">
+    <th mat-header-cell *matHeaderCellDef> Edad </th>
+    <td mat-cell *matCellDef="let element"> {{element.edad}} </td>
+  </ng-container>
+
+  <!-- Name Column -->
+  <ng-container matColumnDef="tipo">
+    <th mat-header-cell *matHeaderCellDef> Tipo </th>
+    <td mat-cell *matCellDef="let element"> {{element.tipo}} </td>
+  </ng-container>
+
+  <!-- Weight Column -->
+  <ng-container matColumnDef="actividad">
+    <th mat-header-cell *matHeaderCellDef> Actividad </th>
+    <td mat-cell *matCellDef="let element"> {{element.actividad}} </td>
+  </ng-container>
+
+  <!-- Symbol Column -->
+  <ng-container matColumnDef="insumo">
+    <th mat-header-cell *matHeaderCellDef> Insumo </th>
+    <td mat-cell *matCellDef="let element"> {{element.insumo}} </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+</table>
+
+<button mat-raised-button color="primary" (click)="knnPrediction()">SOLICITAR METODO</button>
+
 </div>
+
+

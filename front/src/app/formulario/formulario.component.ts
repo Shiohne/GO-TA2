@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {FormControl, FormGroup, Validators} from "@angular/forms";
+import {FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
 
 
 @Component({
@@ -8,20 +8,40 @@ import {FormControl, FormGroup, Validators} from "@angular/forms";
   styleUrls: ['./formulario.component.css']
 })
 export class FormularioComponent implements OnInit {
-  k: string ='';
-  name: string = '';
-  form!: FormGroup;
+  userForm:FormGroup;
+  listData:any;
 
-  constructor() {
+
+  constructor(private fb:FormBuilder  ){
+
+      this.listData = [];
+
+    this.userForm = this.fb.group({
+      name : ['', Validators.required],
+      address : ['', Validators.required],
+      ContactNo: ['', Validators.required],
+      gender: ['', Validators.required]
+    })
+  }
+  ngOnInit() {
   }
 
-  ngOnInit(): void {
-    this.form = new FormGroup({name: new FormControl('',Validators.required)})
+  addItem(){
+    this.listData.push(this.userForm.value);
+    this.userForm.reset();
+  }
+  reset(){
+    this.userForm.reset();
   }
 
-  refresh() {
-    this.k = this.form.value.name;
-    console.log(this.k)
-  }
+  removeItems(element:any){
+    this.listData.forEach((value:any,dex:any) => {
+      if(value == element){
+        this.listData.splice(dex,1)
+      }
 
+    });
+
+
+  }
 }

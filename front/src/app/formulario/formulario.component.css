@@ -1,6 +1,7 @@
 
-.div-main{
-  width: 100%;
-  text-align: center;
-  margin-top: 10%;
+.box{
+  width: 50%;
+  border: 1px solid rgb(145,138,138);
+  border-radius: 0px 20px 20px 20px;
+  margin-left: 400px;
 }

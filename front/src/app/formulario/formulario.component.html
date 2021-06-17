@@ -1,10 +1,77 @@
-<div class="div-main">
-  <form [formGroup]="form" >
-    <mat-form-field appearance="fill">
-      <mat-label>Input</mat-label>
-      <input matInput formControlName=name>
-    </mat-form-field>
+<div class="card">
+  <form [formGroup]="userForm">
+    <div class="mt-5 box">
+      <div class="form-row">
+        <div class="col-md-12">
+          <div class="form-group">
+            <label > Edad </label>
+          </div>
+          <div class="form-row">
+              <div class="col">
+                <input type="text" formControlName="name" class="form-control" placeholder="name">
+              </div>
+          </div>
+        </div>
+        <div class="col-md-12">
+          <div class="form-group">
+            <label > Tipo </label>
+          </div>
+          <div class="form-row">
+              <div class="col">
+                <input type="text" formControlName="address" class="form-control" placeholder="adress">
+              </div>
+          </div>
+        </div>
+        <div class="col-md-12">
+          <div class="form-group">
+            <label > Actividad </label>
+          </div>
+          <div class="form-row">
+              <div class="col">
+                <input type="text" formControlName="ContactNo" class="form-control" placeholder="ContactNo">
+              </div>
+          </div>
+        </div>
+        <div class="col-md-12">
+          <div class="form-group">
+            <label > Insumo </label>
+          </div>
+          <div class="form-row">
+              <div class="col">
+                <input type="text" formControlName="gender" class="form-control" placeholder="gender">
+              </div>
+          </div>
+        </div>
+        <br>
+        <div class="form-row mt-4">
+          <div class="col-md-6">
+            <button type="button" class="btn btn-primary" (click)="addItem()">Add</button> &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp;&nbsp;    &nbsp; &nbsp;
+            <button type="button" class="btn btn-primary" (click)="reset()">reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </form>
-  <button mat-raised-button color="primary" (click)="refresh()">Primary</button>
+  <div class="col-md-8 mt-4 mb-4">
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Edad</th>
+          <th>Tipo</th>
+          <th>Actividad</th>
+          <th>Insumo</th>
+          <th>Quitar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor = "let item of listData">
+          <td>{{item.name}}</td>
+          <td>{{item.address}}</td>
+          <td>{{item.ContactNo}}</td>
+          <td>{{item.gender}}</td>
+          <td><button type="button" class="btn btn-primary" (click)="removeItems(item)">Remove</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
-

@@ -7,12 +7,22 @@ import (
 	"net/http"
 )
 
-var metodoData DataSet
+var pacienteData DataSet
+
+func jsonToSlice(pacientesJSON []Paciente) [][]float64 {
+	pacientesSlice := [][]float64{}
+	for i := range pacientesJSON {
+		paciente := []float64{pacientesJSON[i].Edad, pacientesJSON[i].Tipo, pacientesJSON[i].Actividad, pacientesJSON[i].Insumo}
+		pacientesSlice = append(pacientesSlice, paciente)
+	}
+	return pacientesSlice
+
+}
 
 func resuelveDataSet(res http.ResponseWriter, req *http.Request) {
 	log.Println("llamada al endpoint /dataset")
 
-	jsonBytes, _ := json.Marshal(metodoData.Metodos)
+	jsonBytes, _ := json.Marshal(pacienteData.Pacientes)
 
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusOK)
@@ -25,19 +35,14 @@ func resuelveKNN(res http.ResponseWriter, req *http.Request) {
 
 	bodyBytes, _ := ioutil.ReadAll(req.Body)
 
-	metodoJSON := []Metodo{}
-	json.Unmarshal(bodyBytes, &metodoJSON)
+	pacientesJSON := []Paciente{}
+	json.Unmarshal(bodyBytes, &pacientesJSON)
 
-	log.Println(metodoJSON)
-	metodoMap := [][]float64{}
+	log.Println(pacientesJSON)
 
-	for i := range metodoJSON {
-		metodo := []float64{metodoJSON[i].Edad, metodoJSON[i].Tipo, metodoJSON[i].Actividad, metodoJSON[i].Insumo}
-		metodoMap = append(metodoMap, metodo)
-	}
-
-	predicciones := knn(metodoData.Data, metodoData.Labels, metodoMap)
-
+	// Transformar pacientes a Slice de Slices para pasar al KNN
+	pacientesSlice := jsonToSlice(pacientesJSON)
+	predicciones := knn(pacienteData.Data, pacienteData.Labels, pacientesSlice)
 	jsonBytes, _ := json.Marshal(predicciones)
 
 	res.Header().Set("Content-Type", "application/json")
@@ -46,7 +51,7 @@ func resuelveKNN(res http.ResponseWriter, req *http.Request) {
 }
 
 func manejadorRequest() {
-	// Definir los endpoints de nuestro servicio
+	// Definir los endpoints del servicio
 	http.HandleFunc("/api/dataset", resuelveDataSet)
 	http.HandleFunc("/api/knn", resuelveKNN)
 
@@ -55,6 +60,6 @@ func manejadorRequest() {
 }
 
 func main() {
-	metodoData.loadData()
+	pacienteData.loadData()
 	manejadorRequest()
 }

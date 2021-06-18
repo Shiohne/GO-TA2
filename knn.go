@@ -179,7 +179,7 @@ func readDataSet() [][]string {
 	df := dataframe.ReadCSV(br)
 
 	// Seleccionar las 5 columnas que usaré del dataset
-	dfSelect := df.Select([]int{6, 9, 10, 11, 7})
+	dfSelect := df.Select([]int{6, 9, 10, 11, 8})
 	data := dfSelect.Records()
 	return data
 }
@@ -275,9 +275,14 @@ func (ds *DataSet) loadData() {
 			}
 
 		}
-		// Añadir los datos al DataSet struct ahora convertidos
-		ds.Data = append(ds.Data, temp)
-		ds.Labels = append(ds.Labels, metodos[4])
-		ds.Pacientes = append(ds.Pacientes, paciente)
+		// Filtramos todas las filas que contengan MELA ya que no es un Metodo anticonceptivo que se pueda recomendar normalmente
+		if metodos[4] != "MELA" {
+			// Añadir los datos al DataSet struct ahora convertidos
+			ds.Data = append(ds.Data, temp)
+			ds.Labels = append(ds.Labels, metodos[4])
+			ds.Pacientes = append(ds.Pacientes, paciente)
+
+		}
+
 	}
 }

@@ -20,7 +20,7 @@ export class FormularioComponent implements OnInit {
   prediccion: any;
 
 
-  displayedColumns: string[] = [ 'edad', 'tipo', 'actividad', 'insumo'];
+  displayedColumns: string[] = [ 'edad', 'tipo', 'actividad', 'insumo','borrar'];
   constructor(private fb:FormBuilder, private knnService: KnnService,  private dialog: MatDialog ) {
 
   }
@@ -30,8 +30,8 @@ export class FormularioComponent implements OnInit {
     this.form = new FormGroup({
       edad: new FormControl( '',[Validators.required, Validators.pattern(/^[1-9]\d{0,2}$/), Validators.max(80)]),
       tipo: new FormControl('',[ Validators.required, Validators.pattern(/^[0-9]\d{0,1}$/), Validators.max(1)]),
-      actividad: new FormControl('',[Validators.required,Validators.pattern(/^[1-9]\d{0,100}$/), Validators.max(2000)]),
-      insumo: new FormControl('',[ Validators.required, Validators.pattern(/^[1-9]\d{0,100}$/), Validators.max(10500)])
+      actividad: new FormControl('',[Validators.required,Validators.pattern(/^[1-9]\d{0,10000}$/), Validators.max(2000)]),
+      insumo: new FormControl('',[ Validators.required, Validators.pattern(/^[1-9]\d{0,100000}$/), Validators.max(10500)])
     })
   }
 

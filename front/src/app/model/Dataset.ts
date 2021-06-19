@@ -4,6 +4,5 @@ export class Dataset{
     actividad: number= 0;
     insumo: number = 0;
     metodo: string='';
-
   }
   

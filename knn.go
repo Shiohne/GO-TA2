@@ -146,10 +146,10 @@ func knn(dataX [][]float64, dataY []string, testX [][]float64) Respuesta {
 
 	// Regresar respuesta con los resultados para mostrar
 	for i, label := range predictions {
-		resultado.Prediccion = fmt.Sprintf("Para la paciente %d recomiendo el método %s", i+1, label)
+		resultado.Prediccion = fmt.Sprintf("Para la usuaria %d recomiendo el método %s", i+1, label)
 		respuesta.Resultados = append(respuesta.Resultados, resultado)
 	}
-	respuesta.Detalles = fmt.Sprintf("Usando K = %d vecinos para los %d pacientes", knn.k, len(predictions))
+	respuesta.Detalles = fmt.Sprintf("Usando K = %d vecinos para las %d usuarias", knn.k, len(predictions))
 	return respuesta
 }
 
@@ -193,18 +193,18 @@ type Respuesta struct {
 	Resultados []Resultado `json:"resultados"`
 }
 
-type Paciente struct {
+type Usuaria struct {
 	Edad      float64 `json:"edad"`
 	Tipo      float64 `json:"tipo"`
 	Actividad float64 `json:"actividad"`
 	Insumo    float64 `json:"insumo"`
-	Metodo    string  `json:"paciente"`
+	Metodo    string  `json:"metodo"`
 }
 
 type DataSet struct {
-	Pacientes []Paciente `json:"pacientes"`
-	Data      [][]float64
-	Labels    []string
+	Usuarias []Usuaria `json:"usuarias"`
+	Data     [][]float64
+	Labels   []string
 }
 
 func (ds *DataSet) loadData() {
@@ -212,8 +212,8 @@ func (ds *DataSet) loadData() {
 	// Cargar el DataSet desde su CSV
 	data := readDataSet()
 
-	// Inicializar el paciente Struct para llenarlo con datos
-	paciente := Paciente{}
+	// Inicializar la usuaria Struct para llenarlo con datos
+	usuaria := Usuaria{}
 
 	// Almacenar los datos en las estructuras
 	for i, metodos := range data {
@@ -231,26 +231,26 @@ func (ds *DataSet) loadData() {
 				// Sacar la media de las edades para estandarizar los datos
 				switch value {
 				case "12 a - 17 a":
-					paciente.Edad = 14.5
+					usuaria.Edad = 14.5
 				case "18 a - 29 a":
-					paciente.Edad = 23.5
+					usuaria.Edad = 23.5
 				case "30 a - 59 a":
-					paciente.Edad = 44.5
+					usuaria.Edad = 44.5
 				case "> 60 a":
-					paciente.Edad = 65.0
+					usuaria.Edad = 65.0
 				}
 				// EDAD
-				temp = append(temp, paciente.Edad)
+				temp = append(temp, usuaria.Edad)
 			} else if j == 1 {
 				// Si son Nuevas = 0 y si son Continuadoras = 1
 				switch value {
 				case "NUEVAS":
-					paciente.Tipo = 0.0
+					usuaria.Tipo = 0.0
 				case "CONTINUADORAS":
-					paciente.Tipo = 1.0
+					usuaria.Tipo = 1.0
 				}
 				// TIPO DE USUARIA
-				temp = append(temp, paciente.Tipo)
+				temp = append(temp, usuaria.Tipo)
 			} else if j == 2 {
 				// int a float para facilitar operaciones
 				parsedValue, err := strconv.ParseFloat(value, 64)
@@ -258,8 +258,8 @@ func (ds *DataSet) loadData() {
 					panic(err)
 				}
 				// ACTIVIDAD
-				paciente.Actividad = parsedValue
-				temp = append(temp, paciente.Actividad)
+				usuaria.Actividad = parsedValue
+				temp = append(temp, usuaria.Actividad)
 			} else if j == 3 {
 				// int a float para facilitar operaciones
 				parsedValue, err := strconv.ParseFloat(value, 64)
@@ -267,11 +267,11 @@ func (ds *DataSet) loadData() {
 					panic(err)
 				}
 				// INSUMO
-				paciente.Insumo = parsedValue
-				temp = append(temp, paciente.Insumo)
+				usuaria.Insumo = parsedValue
+				temp = append(temp, usuaria.Insumo)
 			} else if j == 4 {
 				// METODO
-				paciente.Metodo = value
+				usuaria.Metodo = value
 			}
 
 		}
@@ -280,9 +280,8 @@ func (ds *DataSet) loadData() {
 			// Añadir los datos al DataSet struct ahora convertidos
 			ds.Data = append(ds.Data, temp)
 			ds.Labels = append(ds.Labels, metodos[4])
-			ds.Pacientes = append(ds.Pacientes, paciente)
+			ds.Usuarias = append(ds.Usuarias, usuaria)
 
 		}
-
 	}
 }

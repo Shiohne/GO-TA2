@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
 import {MatTable, MatTableDataSource} from "@angular/material/table";
-import {Paciente} from "../model/Paciente";
+import {Usuaria} from "../model/Usuaria";
 import {KnnService} from "../services/knn.service";
 import {MatDialog} from "@angular/material/dialog";
 import {DialogResponseComponent} from "../dialog-response/dialog-response.component";
@@ -14,7 +14,7 @@ import {DialogResponseComponent} from "../dialog-response/dialog-response.compon
 })
 export class FormularioComponent implements OnInit {
 
-  dataSource = new MatTableDataSource<Paciente>();
+  dataSource = new MatTableDataSource<Usuaria>();
   datos: any[]= [];
   form!: FormGroup;
   prediccion: any;

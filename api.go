@@ -7,22 +7,22 @@ import (
 	"net/http"
 )
 
-var pacienteData DataSet
+var usuariaData DataSet
 
-func jsonToSlice(pacientesJSON []Paciente) [][]float64 {
-	pacientesSlice := [][]float64{}
-	for i := range pacientesJSON {
-		paciente := []float64{pacientesJSON[i].Edad, pacientesJSON[i].Tipo, pacientesJSON[i].Actividad, pacientesJSON[i].Insumo}
-		pacientesSlice = append(pacientesSlice, paciente)
+func jsonToSlice(usuariasJSON []Usuaria) [][]float64 {
+	usuariasSlice := [][]float64{}
+	for i := range usuariasJSON {
+		usuaria := []float64{usuariasJSON[i].Edad, usuariasJSON[i].Tipo, usuariasJSON[i].Actividad, usuariasJSON[i].Insumo}
+		usuariasSlice = append(usuariasSlice, usuaria)
 	}
-	return pacientesSlice
+	return usuariasSlice
 
 }
 
 func resuelveDataSet(res http.ResponseWriter, req *http.Request) {
 	log.Println("llamada al endpoint /dataset")
 
-	jsonBytes, _ := json.Marshal(pacienteData.Pacientes)
+	jsonBytes, _ := json.Marshal(usuariaData.Usuarias)
 
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusOK)
@@ -35,14 +35,14 @@ func resuelveKNN(res http.ResponseWriter, req *http.Request) {
 
 	bodyBytes, _ := ioutil.ReadAll(req.Body)
 
-	pacientesJSON := []Paciente{}
-	json.Unmarshal(bodyBytes, &pacientesJSON)
+	usuariasJSON := []Usuaria{}
+	json.Unmarshal(bodyBytes, &usuariasJSON)
 
-	log.Println(pacientesJSON)
+	log.Println(usuariasJSON)
 
-	// Transformar pacientes a Slice de Slices para pasar al KNN
-	pacientesSlice := jsonToSlice(pacientesJSON)
-	predicciones := knn(pacienteData.Data, pacienteData.Labels, pacientesSlice)
+	// Transformar usuarias a Slice de Slices para pasar al KNN
+	usuariasSlice := jsonToSlice(usuariasJSON)
+	predicciones := knn(usuariaData.Data, usuariaData.Labels, usuariasSlice)
 	jsonBytes, _ := json.Marshal(predicciones)
 
 	res.Header().Set("Content-Type", "application/json")
@@ -60,6 +60,6 @@ func manejadorRequest() {
 }
 
 func main() {
-	pacienteData.loadData()
+	usuariaData.loadData()
 	manejadorRequest()
 }

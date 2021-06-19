@@ -53,6 +53,15 @@ export class FormularioComponent implements OnInit {
     this.dialog.open(DialogResponseComponent, {data: {respuesta: response}})
     })
   }
+  Remove(element: any) {
+    this.datos.forEach(((value, index) => {
+      if (value == element)
+      {
+        this.datos.splice(index,1)
+      }
+    }))
+    this.dataSource.data = this.datos
+  }
   get edad() { return this.form.value.edad; }
   get tipo() { return this.form.value.tipo; }
   get actividad() { return this.form.value.actividad; }

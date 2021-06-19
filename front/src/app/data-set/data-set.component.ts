@@ -28,5 +28,4 @@ export class DataSetComponent implements AfterViewInit {
     this.dataSource.data = this.datos
     })
   }
-  
 }

@@ -1,4 +1,4 @@
-# GO-TA2
+# GO-TF
 GOlang exercise for Concurrent and Distributed Computing
 ## Back-end:
 *PATH*/GO-TF/go run knn.go api.go <br/>

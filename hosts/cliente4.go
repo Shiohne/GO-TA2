@@ -127,7 +127,7 @@ type preds struct {
 
 var server string
 
-func main() {
+func coms() {
 	fmt.Print("Enter port: ")
 	host := "localhost:8081"
 

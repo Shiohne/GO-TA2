@@ -142,8 +142,6 @@ func (knn *KNN) findOptimalK(dataX [][]float64, dataY []string) {
 
 }
 
-var msg tmsg
-
 func (knn *KNN) train(testX [][]float64, testY []string, start, end int) {
 	optimalK := 1
 	bestAccuracy := 0.0
@@ -157,9 +155,6 @@ func (knn *KNN) train(testX [][]float64, testY []string, start, end int) {
 			testXPart2 := testX[len(testX)/4 : (2*len(testX))/4]
 			testXPart3 := testX[(2*len(testX))/4 : (3*len(testX))/4]
 			testXPart4 := testX[(3*len(testX))/4:]
-
-			predictiones := msg.read(*knn, testXPart1)
-			fmt.Println(predictiones)
 
 			// Crear los canales para recibir las predicciones de ambas partes
 			out1 := make(chan []string)

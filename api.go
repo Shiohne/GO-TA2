@@ -8,6 +8,7 @@ import (
 )
 
 var usuariaData DataSet
+var knn KNN
 
 func jsonToSlice(usuariasJSON []Usuaria) [][]float64 {
 	usuariasSlice := [][]float64{}
@@ -42,7 +43,7 @@ func resuelveKNN(res http.ResponseWriter, req *http.Request) {
 
 	// Transformar usuarias a Slice de Slices para pasar al KNN
 	usuariasSlice := jsonToSlice(usuariasJSON)
-	predicciones := knn(usuariaData.Data, usuariaData.Labels, usuariasSlice)
+	predicciones := knn.knn(usuariaData.Data, usuariaData.Labels, usuariasSlice)
 	jsonBytes, _ := json.Marshal(predicciones)
 
 	res.Header().Set("Content-Type", "application/json")
@@ -60,6 +61,10 @@ func manejadorRequest() {
 }
 
 func main() {
+	// Carga la data
 	usuariaData.loadData()
+	// Encuentra el k optimo
+	knn.findOptimalK(usuariaData.Data, usuariaData.Labels)
+	// Inicia el manejador de request/ back-end
 	manejadorRequest()
 }

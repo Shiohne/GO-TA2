@@ -4,12 +4,11 @@ import (
 	"bufio"
 	"encoding/csv"
 	"fmt"
+	"io"
 	"math"
 	"net/http"
 	"sort"
 	"strconv"
-
-	"github.com/go-gota/gota/dataframe"
 )
 
 // Estructura a ordenar
@@ -50,9 +49,10 @@ func Euclidian(source, dest []float64) float64 {
 }
 
 type KNN struct {
-	k      int
-	data   [][]float64
-	labels []string
+	k        int
+	data     [][]float64
+	labels   []string
+	accuracy float64
 }
 
 func (knn *KNN) nearestNeighbors(source []float64) map[string]int {
@@ -66,9 +66,9 @@ func (knn *KNN) nearestNeighbors(source []float64) map[string]int {
 	}
 
 	// Tomar el índice de los vecinos más cercanos
-	nNeighborsSlice := sortSliceDistances(distances)
-	sort.Sort(nNeighborsSlice)
-	neighbors := nNeighborsSlice.idx[:knn.k]
+	kNeighborsSlice := sortSliceDistances(distances)
+	sort.Sort(kNeighborsSlice)
+	neighbors := kNeighborsSlice.idx[:knn.k]
 
 	// Listar los labels más cercanos según su índice
 	for _, index := range neighbors {
@@ -107,33 +107,120 @@ func (knn *KNN) predict(testX [][]float64) []string {
 	for _, source := range testX {
 
 		// Contar vecinos cercanos y devolver en mapa[label]{contador}
-		counter := knn.nearestNeighbors(source)
+		neighborsCounter := knn.nearestNeighbors(source)
+
+		// Determinar label más repetido
+		highestNeighbor := sortHighestLabel(neighborsCounter)
 
 		// Agregar label más repetido a las predicciones
-		predictions = append(predictions, sortHighestLabel(counter))
+		predictions = append(predictions, highestNeighbor)
 	}
 	return predictions
 
 }
 
-func knn(dataX [][]float64, dataY []string, testX [][]float64) Respuesta {
+func (knn *KNN) findOptimalK(dataX [][]float64, dataY []string) {
+	// Partir la data en entrenamiento y testing
+	var (
+		trainX [][]float64
+		trainY []string
+		testX  [][]float64
+		testY  []string
+	)
+	for i := 0.0; i < float64(len(dataX)); i++ {
+		if i < float64(len(dataX))*0.01 {
+			testX = append(testX, dataX[int(i)])
+			testY = append(testY, dataY[int(i)])
+		} else {
+			trainX = append(trainX, dataX[int(i)])
+			trainY = append(trainY, dataY[int(i)])
+		}
+	}
+	knn.data = trainX
+	knn.labels = trainY
+	knn.train(testX, testY, 1, 10)
+
+}
+
+func (knn *KNN) train(testX [][]float64, testY []string, start, end int) {
+	optimalK := 1
+	bestAccuracy := 0.0
+	for i := start; i < end; i++ {
+		if i == 1 || i%2 != 0 {
+
+			knn.k = i
+
+			// Separar las pruebas en 4 partes
+			testXPart1 := testX[:len(testX)/4]
+			testXPart2 := testX[len(testX)/4 : (2*len(testX))/4]
+			testXPart3 := testX[(2*len(testX))/4 : (3*len(testX))/4]
+			testXPart4 := testX[(3*len(testX))/4:]
+
+			// Crear los canales para recibir las predicciones de ambas partes
+			out1 := make(chan []string)
+			out2 := make(chan []string)
+			out3 := make(chan []string)
+			out4 := make(chan []string)
+			go func(out chan<- []string) { out <- knn.predict(testXPart1) }(out1)
+			go func(out chan<- []string) { out <- knn.predict(testXPart2) }(out2)
+			go func(out chan<- []string) { out <- knn.predict(testXPart3) }(out3)
+			go func(out chan<- []string) { out <- knn.predict(testXPart4) }(out4)
+			part1, part2, part3, part4 := <-out1, <-out2, <-out3, <-out4
+			close(out1)
+			close(out2)
+			close(out3)
+			close(out4)
+
+			// Unir las predicciones
+			predictions := []string{}
+			predictions = append(predictions, part1...)
+			predictions = append(predictions, part2...)
+			predictions = append(predictions, part3...)
+			predictions = append(predictions, part4...)
+
+			// Probar precision
+			correct := 0
+			for i := range predictions {
+				if predictions[i] == testY[i] {
+					correct += 1
+				}
+			}
+
+			fmt.Printf("Usando K = %d vecinos\n", knn.k)
+			fmt.Printf("Predicciones correctas: %d de %d \n", correct, len(predictions))
+			accuracy := (float64(correct) / float64(len(predictions)))
+			fmt.Printf("Precisión de %0.3f%%\n", accuracy*100)
+
+			if bestAccuracy < accuracy {
+				bestAccuracy = accuracy
+				optimalK = knn.k
+			}
+
+		}
+	}
+	fmt.Println("El k más óptimo es: ", optimalK)
+	knn.k = optimalK
+	knn.accuracy = bestAccuracy
+}
+
+func (knn *KNN) knn(dataX [][]float64, dataY []string, testX [][]float64) Respuesta {
 
 	// Insertar datos al knn
-	knn := KNN{}
 	knn.data = dataX
 	knn.labels = dataY
-	knn.k = 7
 
 	// Separar las pruebas en 2 partes
 	testXPart1 := testX[:len(testX)/2]
 	testXPart2 := testX[len(testX)/2:]
 
-	// Crear un canal para recibir las predicciones de ambas partes
-	out := make(chan []string)
-	go func(out chan<- []string) { out <- knn.predict(testXPart1) }(out)
-	go func(out chan<- []string) { out <- knn.predict(testXPart2) }(out)
-	part1, part2 := <-out, <-out
-	close(out)
+	// Crear los canales para recibir las predicciones de ambas partes
+	out1 := make(chan []string)
+	out2 := make(chan []string)
+	go func(out chan<- []string) { out <- knn.predict(testXPart1) }(out1)
+	go func(out chan<- []string) { out <- knn.predict(testXPart2) }(out2)
+	part1, part2 := <-out1, <-out2
+	close(out1)
+	close(out2)
 
 	// Unir las predicciones
 	predictions := []string{}
@@ -149,12 +236,13 @@ func knn(dataX [][]float64, dataY []string, testX [][]float64) Respuesta {
 		resultado.Prediccion = fmt.Sprintf("Para la usuaria %d recomiendo el método %s", i+1, label)
 		respuesta.Resultados = append(respuesta.Resultados, resultado)
 	}
-	respuesta.Detalles = fmt.Sprintf("Usando K = %d vecinos para las %d usuarias", knn.k, len(predictions))
+	respuesta.Detalles = fmt.Sprintf("Usando K = %d vecinos para las %d usuarias y con un porcentaje de precisión de  %0.3f%%", knn.k, len(predictions), knn.accuracy*100)
 	return respuesta
 }
 
 func readDataSet() [][]string {
 	// Obtener el dataset desde github
+	metodoMatrix := [][]string{}
 	url := "https://github.com/Shiohne/GO-TA2/raw/master/DAT%20PlaniFamiliar_01_Metodo.csv"
 	dataset, err := http.Get(url)
 	if err != nil {
@@ -176,12 +264,17 @@ func readDataSet() [][]string {
 	reader := csv.NewReader(br)
 	reader.Comma = ','
 	reader.LazyQuotes = true
-	df := dataframe.ReadCSV(br)
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+		metodoMatrix = append(metodoMatrix, record)
+	}
 
-	// Seleccionar las 5 columnas que usaré del dataset
-	dfSelect := df.Select([]int{6, 9, 10, 11, 8})
-	data := dfSelect.Records()
-	return data
+	return metodoMatrix
 }
 
 type Resultado struct {
@@ -223,12 +316,10 @@ func (ds *DataSet) loadData() {
 		}
 
 		temp := []float64{}
-		// Recorrer las columnas
-		for j, value := range metodos {
+		// Convertimos los datos necesarios a floats para poder añadirlos
+		for j, value := range metodos[:] {
 
-			// Convertir los datos según su columna
-			if j == 0 {
-				// Sacar la media de las edades para estandarizar los datos
+			if j == 6 {
 				switch value {
 				case "12 a - 17 a":
 					usuaria.Edad = 14.5
@@ -239,9 +330,11 @@ func (ds *DataSet) loadData() {
 				case "> 60 a":
 					usuaria.Edad = 65.0
 				}
-				// EDAD
 				temp = append(temp, usuaria.Edad)
-			} else if j == 1 {
+			} else if j == 7 {
+				// METODO
+				usuaria.Metodo = value
+			} else if j == 9 {
 				// Si son Nuevas = 0 y si son Continuadoras = 1
 				switch value {
 				case "NUEVAS":
@@ -251,8 +344,7 @@ func (ds *DataSet) loadData() {
 				}
 				// TIPO DE USUARIA
 				temp = append(temp, usuaria.Tipo)
-			} else if j == 2 {
-				// int a float para facilitar operaciones
+			} else if j == 10 {
 				parsedValue, err := strconv.ParseFloat(value, 64)
 				if err != nil {
 					panic(err)
@@ -260,8 +352,7 @@ func (ds *DataSet) loadData() {
 				// ACTIVIDAD
 				usuaria.Actividad = parsedValue
 				temp = append(temp, usuaria.Actividad)
-			} else if j == 3 {
-				// int a float para facilitar operaciones
+			} else if j == 11 {
 				parsedValue, err := strconv.ParseFloat(value, 64)
 				if err != nil {
 					panic(err)
@@ -269,19 +360,24 @@ func (ds *DataSet) loadData() {
 				// INSUMO
 				usuaria.Insumo = parsedValue
 				temp = append(temp, usuaria.Insumo)
-			} else if j == 4 {
-				// METODO
-				usuaria.Metodo = value
 			}
 
 		}
 		// Filtramos todas las filas que contengan MELA ya que no es un Metodo anticonceptivo que se pueda recomendar normalmente
-		if metodos[4] != "MELA" {
+		if metodos[7] != "MELA" {
+
 			// Añadir los datos al DataSet struct ahora convertidos
 			ds.Data = append(ds.Data, temp)
-			ds.Labels = append(ds.Labels, metodos[4])
+			ds.Labels = append(ds.Labels, metodos[7])
 			ds.Usuarias = append(ds.Usuarias, usuaria)
-
 		}
 	}
 }
+
+/*func main() {
+	ds := DataSet{}
+	ds.loadData()
+	knn := KNN{}
+	knn.findOptimalK(ds.Data, ds.Labels)
+
+}*/
